@@ -93,7 +93,14 @@ class Template_variables_acc {
 		
 		$site_id = $this->EE->config->item('site_id');
 		
-		$field_groups = $this->EE->db->query("SELECT group_id, group_name FROM exp_field_groups WHERE site_id=".$site_id." ORDER BY group_name");	
+		//modified this to only query channels that have custom fields -- channels with ZERO custom fields will not be returned
+		$field_groups = $this->EE->db->query("
+		  SELECT DISTINCT fg.group_id, fg.group_name 
+      FROM exp_field_groups fg
+      JOIN exp_channel_fields cf ON cf.group_id = fg.group_id
+      WHERE fg.site_id=".$site_id." 
+      ORDER BY group_name;
+		  ");
 		
 		if ($field_groups->num_rows() > 0)
 		{
@@ -103,16 +110,19 @@ class Template_variables_acc {
 			
 		    foreach($field_groups->result_array() as $field_group)
 		    {
+				
 				$variables['field_groups'][] = array(
 													 'group_id' => $field_group['group_id'],
 													 'group_name' => $field_group['group_name'],
 													 'new_custom_field_link' => BASE.AMP.'C=admin_content'.AMP.'M=field_edit'.AMP.'group_id='.$field_group['group_id']
 													);
-
+													
 				if ($custom_fields->num_rows() > 0)
 				{
+				    
 				    foreach($custom_fields->result_array() as $custom_field)
 				    {
+												
 						if($custom_field['group_id'] == $field_group['group_id'])
 						{
 					        $variables['field_groups'][$i]['custom_fields'][] = array(
